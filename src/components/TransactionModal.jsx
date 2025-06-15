@@ -5,10 +5,10 @@ const TransactionModal = ({ onClose }) => {
   const [customerId, setCustomerId] = useState('');
   const [supplier, setSupplier] = useState('');
   const [date, setDate] = useState('');
+  const [dueDate, setDueDate] = useState('');
   const [productId, setProductId] = useState('');
   const [price, setPrice] = useState(0);
   const [qty, setQty] = useState(1);
-  const [method, setMethod] = useState('');
   const [collected, setCollected] = useState('false');
   const [note, setNote] = useState('');
 
@@ -18,7 +18,7 @@ const TransactionModal = ({ onClose }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log({
-      type, customerId, supplier, date, productId, price, qty, method, collected, note
+      type, customerId, supplier, date, productId, price, qty, collected, note
     });
     onClose();
   };
@@ -34,7 +34,6 @@ const TransactionModal = ({ onClose }) => {
             <select value={type} onChange={(e) => setType(e.target.value)} className="border w-full rounded p-2">
               <option>매출</option>
               <option>매입</option>
-              <option>수금</option>
             </select>
           </div>
 
@@ -63,6 +62,11 @@ const TransactionModal = ({ onClose }) => {
           {(type === '매출' || type === '매입') && (
             <>
               <div>
+                <label className="block mb-1">납기일</label>
+                <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="border w-full rounded p-2" />
+              </div>
+
+              <div>
                 <label className="block mb-1">제품</label>
                 <select value={productId} onChange={(e) => setProductId(e.target.value)} className="border w-full rounded p-2">
                   <option value="">선택</option>
@@ -81,41 +85,20 @@ const TransactionModal = ({ onClose }) => {
               </div>
             </>
           )}
-
-          {type === '수금' && (
-            <>
-              <div>
-               <label className="block mb-1">고객사</label>
-                <select value={customerId} onChange={(e) => setCustomerId(e.target.value)} className="border w-full rounded p-2" required>
-                 <option value="">선택</option>
-                 {customers.map((c, i) => (
-                  <option key={i} value={c}>
-                    {c}
-                  </option>
-                ))}
-                </select>
-                </div>
-
-              <div>
-                <label className="block mb-1">결제수단</label>
-                <input value={method} onChange={(e) => setMethod(e.target.value)} className="border w-full rounded p-2" />
-              </div>
-
+          {type === '매출' && (
               <div>
                 <label className="block mb-1">수금 여부</label>
-                <select value={collected} onChange={(e) => setCollected(e.target.value)} className="border w-full rounded p-2">
-                  <option value="true">완료</option>
-                  <option value="false">미수금</option>
+                  <select value={collected} onChange={(e) => setCollected(e.target.value)} className="border w-full rounded p-2">
+                    <option value="true">완료</option>
+                  < option value="false">미수금</option>
                 </select>
               </div>
-            </>
           )}
-
           <div>
             <label className="block mb-1">비고</label>
             <textarea value={note} onChange={(e) => setNote(e.target.value)} className="border w-full rounded p-2" />
           </div>
-
+          
           <div className="flex justify-end gap-2 mt-4">
             <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">저장</button>
             <button type="button" onClick={onClose} className="bg-gray-200 px-4 py-2 rounded">취소</button>

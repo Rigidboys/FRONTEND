@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import CustomerTab from "./components/CustomerTab";
 import ProductTab from "./components/ProductTab";
 import TransactionPage from "./components/TransactionPage";
 import Dashboard from "./components/Dashboard";
 import Layout from "./components/Layout";
+import AuthPage from "./components/AuthPage";
 import { Navigate } from "react-router-dom";
 
 function TabbedApp() {
@@ -88,71 +89,11 @@ function TabbedApp() {
   );
 }
 
-function LoginPage() {
-  const [id, setId] = useState("");
-  const [password, setPassword] = useState("");
-  const navigate = useNavigate();
-
-  const handleLogin = (e) => {
-    e.preventDefault();
-    if (id === "admin" && password === "1234") {
-      localStorage.setItem("isLoggedIn", "true"); // 로그인 상태 저장
-      navigate("/"); // 메인으로 이동
-    } else {
-      alert("아이디나 비밀번호가 틀렸습니다.");
-    }
-  };
-
-  return (
-    <div className="flex justify-center items-center h-screen bg-gray-100">
-      <form onSubmit={handleLogin} className="bg-white p-8 rounded shadow-md w-80">
-        <h2 className="text-xl font-bold mb-4">로그인</h2>
-        <input className="border w-full mb-4 p-2 rounded" placeholder="아이디" value={id} onChange={(e) => setId(e.target.value)} />
-        <input className="border w-full mb-4 p-2 rounded" placeholder="비밀번호" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-        <button type="submit" className="bg-blue-500 text-white w-full py-2 rounded">로그인</button>
-      </form>
-    </div>
-  );
-}
-
-function SignupPage() {
-  const [form, setForm] = useState({ id: "", password: "", passwordConfirm: "", email: "", phone: "" });
-
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSignup = (e) => {
-    e.preventDefault();
-    if (form.password !== form.passwordConfirm) {
-      alert("비밀번호가 일치하지 않습니다.");
-      return;
-    }
-    // TODO: POST /api/signup 요청
-    alert("회원가입 완료!");
-  };
-
-  return (
-    <div className="flex justify-center items-center h-screen bg-gray-100">
-      <form onSubmit={handleSignup} className="bg-white p-8 rounded shadow-md w-96">
-        <h2 className="text-xl font-bold mb-4">회원가입</h2>
-        <input className="border w-full mb-3 p-2 rounded" name="id" placeholder="아이디" value={form.id} onChange={handleChange} required />
-        <input className="border w-full mb-3 p-2 rounded" name="password" placeholder="비밀번호" type="password" value={form.password} onChange={handleChange} required />
-        <input className="border w-full mb-3 p-2 rounded" name="passwordConfirm" placeholder="비밀번호 확인" type="password" value={form.passwordConfirm} onChange={handleChange} required />
-        <input className="border w-full mb-3 p-2 rounded" name="email" placeholder="이메일" type="email" value={form.email} onChange={handleChange} required />
-        <input className="border w-full mb-3 p-2 rounded" name="phone" placeholder="전화번호" type="tel" value={form.phone} onChange={handleChange} required />
-        <button type="submit" className="bg-purple-500 text-white w-full py-2 rounded">회원가입</button>
-      </form>
-    </div>
-  );
-}
-
 export default function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/login" element={<AuthPage />} />
         <Route path="/*" element={localStorage.getItem('isLoggedIn') ? (
           <Layout><TabbedApp /></Layout> ) : (
           <Navigate to="/login" />)}/>
