@@ -1,18 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import CustomerModal from './CustomerModal';
 
-const initialCustomers = [
-  { id: 1, name: '상현기업', type: '기업', ceo: '유재웅', contact: '010-1234-5678', location: '경기도 군포시 당정동', note: '' },
-  { id: 2, name: '한국일자리센터', type: '공공', ceo: '박성현', contact: '02-123-4567', location: '경기도 군포시 당정동', note: '' },
-  { id: 3, name: '김일호', type: '개인', ceo: '김일호', contact: '010-9876-5432', location: '', note: '' },
-];
-
 const CustomerTab = () => {
-  const [customers, setCustomers] = useState(initialCustomers);
+  const [searchParams] = useSearchParams();
+  const tab = searchParams.get('tab');
+
+  const [customers, setCustomers] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [editData, setEditData] = useState(null);
 
+  useEffect(() => {
+    if (tab !== 'customer') return;
+
+    fetch("/api/customers", {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      credentials: 'include'
+    })
+      .then(res => res.json())
+      .then(data => {
+        console.log("고객사 API 응답:", data);
+        if (Array.isArray(data)) {
+          setCustomers(data);
+        } else if (Array.isArray(data.customers)) {
+          setCustomers(data.customers);
+        } else {
+          console.error("customers 데이터가 배열이 아닙니다:", data);
+          setCustomers([]);
+        }
+      })
+      .catch(err => console.error("고객사 목록 불러오기 실패:", err));
+  }, [tab]);
+
+  if (tab !== 'customer') return null;
+
   const openModal = (data = null) => {
+    if (data && !data.Id) {
+      console.warn("수정하려는 데이터에 ID가 없습니다!", data);
+    }
     setEditData(data);
     setModalVisible(true);
   };
@@ -22,28 +51,66 @@ const CustomerTab = () => {
     setEditData(null);
   };
 
-  const handleSave = (newData) => {
-    if (editData) {
-      // 수정
-      setCustomers(prev =>
-        prev.map(c => c.id === editData.id ? { ...editData, ...newData } : c)
-      );
+  const handleSave = async (newData) => {
+    if (editData?.Id) {
+      const res = await fetch(`/api/customers/mutation/${editData.Id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(newData),
+        credentials: 'include'
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setCustomers(prev =>
+          prev.map(c => c.Id === updated.Id ? updated : c)
+        );
+      } else {
+        const err = await res.text();
+        console.error("수정 실패:", res.status, err);
+      }
     } else {
-      // 새로 추가
-      const nextId = Math.max(...customers.map(c => c.id)) + 1;
-      setCustomers(prev => [...prev, { ...newData, id: nextId }]);
+      const res = await fetch("/api/customers", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(newData),
+        credentials: 'include'
+      });
+      if (res.ok) {
+        const saved = await res.json();
+        setCustomers(prev => [...prev, saved]);
+      } else {
+        const err = await res.text();
+        console.error("등록 실패:", res.status, err);
+      }
     }
     closeModal();
   };
 
-  const handleEdit = (id) => {
-    const data = customers.find(c => c.id === id);
-    openModal(data);
-  };
-
-  const handleDelete = (id) => {
+  const handleDelete = async (Id) => {
+    if (!Id) {
+      console.error("삭제 요청 ID가 없습니다.");
+      return;
+    }
     if (window.confirm('정말 삭제하시겠습니까?')) {
-      setCustomers(prev => prev.filter(c => c.id !== id));
+      const res = await fetch(`/api/customers/mutation/${Id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        credentials: 'include'
+      });
+      if (res.ok) {
+        setCustomers(prev => prev.filter(c => c.Id !== Id));
+      } else {
+        const err = await res.text();
+        console.error("삭제 실패:", res.status, err);
+      }
     }
   };
 
@@ -73,26 +140,32 @@ const CustomerTab = () => {
           </thead>
           <tbody>
             {customers.map((c) => (
-              <tr key={c.id}>
-                <td className="px-4 py-2">{c.name}</td>
-                <td className="px-4 py-2 text-center">{c.type}</td>
-                <td className="px-4 py-2 text-center">{c.ceo}</td>
-                <td className="px-4 py-2 text-center">{c.contact}</td>
-                <td className="px-4 py-2 text-center">{c.location || ''}</td>
+              <tr key={c.Id}>
+                <td className="px-4 py-2">{c.Office_Name}</td>
+                <td className="px-4 py-2 text-center">{c.Type}</td>
+                <td className="px-4 py-2 text-center">{c.Master_Name}</td>
+                <td className="px-4 py-2 text-center">{c.Phone}</td>
+                <td className="px-4 py-2 text-center">{c.Address || ''}</td>
                 <td className="px-4 py-2">
                   <div className="flex justify-between items-center">
                     <span className="truncate max-w-[400px] cursor-pointer hover:underline block">
-                      {c.note || ''}
+                      {c.Description || ''}
                     </span>
                     <div className="flex space-x-1 items-center">
                       <button
-                        onClick={() => handleEdit(c.id)}
+                        onClick={() => {
+                          if (!c.Id) console.error("수정하려는 고객 ID가 없습니다:", c);
+                          openModal(c);
+                        }}
                         className="text-blue-500 hover:text-blue-700 mx-1"
                       >
                         <i className="fas fa-edit"></i>
                       </button>
                       <button
-                        onClick={() => handleDelete(c.id)}
+                        onClick={() => {
+                          if (!c.Id) console.error("삭제하려는 고객 ID가 없습니다:", c);
+                          handleDelete(c.Id);
+                        }}
                         className="text-red-500 hover:text-red-700 mx-1"
                       >
                         <i className="fas fa-trash"></i>

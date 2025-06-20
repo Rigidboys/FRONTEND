@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 
 const CustomerModal = ({ visible, onClose, onSave, editData }) => {
   const [form, setForm] = useState({
-    name: '',
-    type: '기업',
-    ceo: '',
-    contact: '',
-    location: '',
-    note: ''
+    Office_Name: '',
+    Type: '기업',
+    Master_Name: '',
+    Phone: '',
+    Address: '',
+    Description: ''
   });
 
   useEffect(() => {
@@ -15,12 +15,12 @@ const CustomerModal = ({ visible, onClose, onSave, editData }) => {
       setForm(editData);
     } else {
       setForm({
-        name: '',
-        type: '기업',
-        ceo: '',
-        contact: '',
-        location: '',
-        note: ''
+        Office_Name: '',
+        Type: '기업',
+        Master_Name: '',
+        Phone: '',
+        Address: '',
+        Description: ''
       });
     }
   }, [editData]);
@@ -44,11 +44,11 @@ const CustomerModal = ({ visible, onClose, onSave, editData }) => {
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
             <label className="block mb-1">고객사명</label>
-            <input required name="name" className="border w-full rounded p-2" value={form.name} onChange={handleChange} />
+            <input required name="Office_Name" className="border w-full rounded p-2" value={form.Office_Name} onChange={handleChange} />
           </div>
           <div className="mb-3">
             <label className="block mb-1">유형</label>
-            <select name="type" className="border w-full rounded p-2" value={form.type} onChange={handleChange}>
+            <select name="Type" className="border w-full rounded p-2" value={form.Type} onChange={handleChange}>
               <option value="기업">기업</option>
               <option value="공공">공공</option>
               <option value="개인">개인</option>
@@ -56,19 +56,19 @@ const CustomerModal = ({ visible, onClose, onSave, editData }) => {
           </div>
           <div className="mb-3">
             <label className="block mb-1">담당자</label>
-            <input name="ceo" className="border w-full rounded p-2" value={form.ceo} onChange={handleChange} />
+            <input name="Master_Name" className="border w-full rounded p-2" value={form.Master_Name} onChange={handleChange} />
           </div>
           <div className="mb-3">
             <label className="block mb-1">연락처</label>
-            <input name="contact" className="border w-full rounded p-2" value={form.contact} onChange={handleChange} />
+            <input name="Phone" className="border w-full rounded p-2" value={form.Phone} onChange={handleChange} />
           </div>
           <div className="mb-3">
             <label className="block mb-1">주소</label>
-            <input name="location" className="border w-full rounded p-2" value={form.location} onChange={handleChange} />
+            <input name="Address" className="border w-full rounded p-2" value={form.Address} onChange={handleChange} />
           </div>
           <div className="mb-3">
             <label className="block mb-1">비고</label>
-            <input name="note" className="border w-full rounded p-2" value={form.note} onChange={handleChange} />
+            <input name="Description" className="border w-full rounded p-2" value={form.Description} onChange={handleChange} />
           </div>
           <div className="flex gap-2 mt-4">
             <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">저장</button>

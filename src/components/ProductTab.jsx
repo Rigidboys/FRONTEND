@@ -1,20 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ConfirmModal from './ConfirmModal';
 
-const initialProducts = [
-  { id: 1, name: '시스템 계정관리', category: '솔루션', license: '연간', price: 5000000, cost: 3000000, description: '시스템 계정 통합 관리 솔루션' },
-  { id: 2, name: 'MobileOTP', category: '솔루션', license: '1회성', price: 2500000, cost: 1500000, description: '모바일 OTP 인증 솔루션' },
-  { id: 3, name: 'DB 접근 제어', category: '솔루션', license: '연간', price: 4300000, cost: 2800000, description: '데이터베이스 접근 제어 시스템' },
-  { id: 4, name: '보안 컨설팅', category: '서비스', license: '시간당', price: 500000, cost: 300000, description: '보안 전문가 컨설팅 서비스' },
-];
-
 export default function ProductTab() {
-  const [products, setProducts] = useState(initialProducts);
+  const [products, setProducts] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   
+  useEffect(() => {
+  fetch("/api/product")
+    .then((res) => res.json())
+    .then(setProducts)
+    .catch((err) => console.error("제품 불러오기 실패", err));
+  }, []);
+
   const openModal = (product = null) => {
     setEditing(product);
     setShowModal(true);
@@ -28,20 +28,33 @@ export default function ProductTab() {
   const handleSubmit = (e) => {
     e.preventDefault();
     const form = new FormData(e.target);
-    const data = Object.fromEntries(form.entries());
+   const data = Object.fromEntries(form.entries());
     const updated = {
-      ...editing, 
+     ...editing,
       ...data,
-      price: parseInt(data.price),
-    };
+     price: parseInt(data.price),
+   };
 
-    if (editing) {
-      setProducts(products.map(p => p.id === editing.id ? updated : p));
-    } else {
-      const newId = Math.max(...products.map(p => p.id)) + 1;
-      setProducts([...products, { ...updated, id: newId }]);
-    }
-    closeModal();
+   const method = editing ? 'PUT' : 'POST';
+   const url = editing
+      ? `/api/products/mutation/${editing.id}`
+     : '/api/product';
+
+    fetch(url, {
+     method,
+     headers: { 'Content-Type': 'application/json' },
+     body: JSON.stringify(updated),
+   })
+     .then((res) => res.json())
+     .then((saved) => {
+       if (editing) {
+         setProducts((prev) => prev.map((p) => (p.id === saved.id ? saved : p)));
+       } else {
+         setProducts((prev) => [...prev, saved]);
+        }
+        closeModal();
+      })
+      .catch((err) => console.error("저장 실패", err));
   };
 
   const handleDelete = (id) => {
@@ -50,9 +63,16 @@ export default function ProductTab() {
   };
 
   const confirmDelete = () => {
-    setProducts(products.filter((p) => p.id !== deleteTargetId));
-    setShowConfirm(false);
+    fetch(`/api/products/mutation/${deleteTargetId}`, {
+      method: 'DELETE',
+    })
+      .then(() => {
+        setProducts((prev) => prev.filter((p) => p.id !== deleteTargetId));
+        setShowConfirm(false);
+      })
+      .catch((err) => console.error("삭제 실패", err));
   };
+
 
 return (
   <div className="p-4">

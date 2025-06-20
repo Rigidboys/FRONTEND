@@ -1,17 +1,20 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 const PurchaseTable = ({ searchCustomer, searchProduct }) => {
-  const purchases = [
-    { id: 1, supplier: '인프라공급사', date: '2025-03-10', product: '시스템 계정관리', price: 3000000, qty: 2, note: '할인 적용' },
-    { id: 2, supplier: '보안솔루션사', date: '2025-02-15', product: 'MobileOTP', price: 1500000, qty: 5, note: '' },
-    { id: 3, supplier: 'DB솔루션사', date: '2025-04-05', product: 'DB 접근 제어', price: 2800000, qty: 3, note: '추가 라이센스' },
-  ];
+  const [purchases, setPurchases] = useState([]);
 
-const filteredPurchases = purchases.filter(p => {
-  const matchCustomer = !searchCustomer || p.supplier.includes(searchCustomer);
-  const matchProduct = !searchProduct || p.product.includes(searchProduct);
-  return matchCustomer && matchProduct;
-});
+  useEffect(() => {
+    fetch('/api/purchase')
+      .then(res => res.json())
+      .then(setPurchases)
+      .catch(err => console.error("매입 데이터 불러오기 실패", err));
+  }, []);
+
+  const filteredPurchases = purchases.filter(p => {
+    const matchCustomer = !searchCustomer || p.supplier.includes(searchCustomer);
+    const matchProduct = !searchProduct || p.product.includes(searchProduct);
+    return matchCustomer && matchProduct;
+  });
 
   return (
     <div className="overflow-x-auto mb-8">

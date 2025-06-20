@@ -1,18 +1,20 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 const SalesTable = ({ searchCustomer, searchProduct }) => {
-  const sales = [
-    { id: 1, customer: '상현기업', date: '2025-05-10', product: '시스템 계정관리', price: 5000000, qty: 3, note: '추가 할인 적용' },
-    { id: 2, customer: '한국일자리센터', date: '2025-04-20', product: 'MobileOTP', price: 2500000, qty: 2, note: '' },
-    { id: 3, customer: '김일호', date: '2025-05-28', product: '보안 컨설팅', price: 500000, qty: 10, note: '20시간 패키지' },
-    { id: 4, customer: '상현기업', date: '2025-06-15', product: 'DB 접근 제어', price: 4300000, qty: 1, note: '유지보수 포함' },
-  ];
+  const [sales, setSales] = useState([]);
 
-const filteredSales = sales.filter(s => {
-  const matchCustomer = !searchCustomer || s.customer.includes(searchCustomer);
-  const matchProduct = !searchProduct || s.product.includes(searchProduct);
-  return matchCustomer && matchProduct;
-});
+  useEffect(() => {
+    fetch('/api/sales')
+      .then(res => res.json())
+      .then(setSales)
+      .catch(err => console.error("매출 데이터 불러오기 실패", err));
+  }, []);
+
+  const filteredSales = sales.filter(s => {
+    const matchCustomer = !searchCustomer || s.customer.includes(searchCustomer);
+    const matchProduct = !searchProduct || s.product.includes(searchProduct);
+    return matchCustomer && matchProduct;
+  });
 
   return (
     <div className="overflow-x-auto mb-8">

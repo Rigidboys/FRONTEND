@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 const TransactionModal = ({ onClose }) => {
   const [type, setType] = useState('매출');
@@ -12,16 +12,53 @@ const TransactionModal = ({ onClose }) => {
   const [collected, setCollected] = useState('false');
   const [note, setNote] = useState('');
 
-  const customers = ['상현기업', '한국일자리센터', '김일호'];
-  const products = ['시스템 계정관리', 'MobileOTP', 'DB 접근 제어', '보안 컨설팅'];
+const [customers, setCustomers] = useState([]);
+const [products, setProducts] = useState([]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log({
-      type, customerId, supplier, date, productId, price, qty, collected, note
-    });
-    onClose();
+useEffect(() => {
+  fetch('/api/customers/Office_Name')
+    .then(res => res.json())
+    .then(setCustomers)
+    .catch(console.error);
+
+  fetch('/api/product/Product_Names')
+    .then(res => res.json())
+    .then(setProducts)
+    .catch(console.error);
+}, []);
+
+const handleSubmit = (e) => {
+  e.preventDefault();
+
+  const transactionData = {
+    type,
+    customerId,
+    supplier,
+    date,
+    dueDate,
+    productId,
+    price,
+    qty,
+    collected: collected === 'true',
+    note,
   };
+
+  fetch('/api/purchase', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(transactionData),
+  })
+    .then((res) => {
+      if (!res.ok) throw new Error('저장 실패');
+      return res.json();
+    })
+    .then(() => {
+      onClose();  // 성공 시 모달 닫기
+    })
+    .catch((err) => {
+      console.error("거래 저장 오류:", err);
+    });
+};
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">

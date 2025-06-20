@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   SalesTrendChart,
   CustomerSalesChart,
@@ -33,89 +33,84 @@ function formatCurrency(value) {
   return `\u20A9${value.toLocaleString()}`;
 }
 
-const Dashboard = ({
-  sales = [], purchases = [], payments = [], products = [], customers  = []}) => {
-  const {
-    months,
-    salesData,
-    purchasesData,
-    customerLabels,
-    customerSales,
-    productLabels,
-    productSales,
-    kpi
-  } = useMemo(() => {
-    const salesByMonth = {};
-    const purchasesByMonth = {};
-    const salesByCustomer = {};
-    const salesByProduct = {};
+const Dashboard = () => {
+  const [months, setMonths] = useState([]);
+  const [salesData, setSalesData] = useState([]);
+  const [purchasesData, setPurchasesData] = useState([]);
+  const [customerLabels, setCustomerLabels] = useState([]);
+  const [customerSales, setCustomerSales] = useState([]);
+  const [productLabels, setProductLabels] = useState([]);
+  const [productSales, setProductSales] = useState([]);
+  const [kpi, setKpi] = useState({
+    totalSales: 0,
+    totalPurchases: 0,
+    totalCollected: 0,
+    totalUncollected: 0,
+    avgMarginRate: '0%'
+  });
 
-    sales.forEach(s => {
-      const month = s.date.substring(0, 7);
-      salesByMonth[month] = (salesByMonth[month] || 0) + s.price * s.qty;
-      salesByCustomer[s.customer] = (salesByCustomer[s.customer] || 0) + s.price * s.qty;
-      salesByProduct[s.product] = (salesByProduct[s.product] || 0) + s.price * s.qty;
+  useEffect(() => {
+    // 예: 월별 매출/매입
+    fetch('/api/monthly_totals')
+      .then(res => res.json())
+      .then(data => {
+        setMonths(data.months);
+        setSalesData(data.sales);
+        setPurchasesData(data.purchases);
+      });
+
+    // KPI
+    Promise.all([
+      fetch('/api/total_sales').then(res => res.json()),
+      fetch('/api/total_purchases').then(res => res.json()),
+      fetch('/api/total_paid').then(res => res.json()),
+      fetch('/api/unpaid').then(res => res.json()),
+      fetch('/api/avg_margin_rate').then(res => res.text()),  // 문자열로 반환된다고 가정
+    ]).then(([sales, purchases, paid, unpaid, avgMarginRate]) => {
+      setKpi({
+        totalSales: sales.amount,
+        totalPurchases: purchases.amount,
+        totalCollected: paid.amount,
+        totalUncollected: unpaid.amount,
+        avgMarginRate: avgMarginRate + '%'
+      });
     });
 
-    purchases.forEach(p => {
-      const month = p.date.substring(0, 7);
-      purchasesByMonth[month] = (purchasesByMonth[month] || 0) + p.price * p.qty;
-    });
+    // 고객사별 매출
+    fetch('/api/payment_reliability')
+      .then(res => res.json())
+      .then(data => {
+        setCustomerLabels(data.labels);
+        setCustomerSales(data.sales);
+      });
 
-    const allMonths = Array.from(new Set([...Object.keys(salesByMonth), ...Object.keys(purchasesByMonth)])).sort();
-    const salesData = allMonths.map(m => salesByMonth[m] || 0);
-    const purchasesData = allMonths.map(m => purchasesByMonth[m] || 0);
-
-    const customerLabels = Object.keys(salesByCustomer);
-    const customerSales = Object.values(salesByCustomer);
-    const productLabels = products.map(p => p.name);
-    const productSales = productLabels.map(name => salesByProduct[name] || 0);
-
-    const totalSales = sales.reduce((sum, s) => sum + s.price * s.qty, 0);
-    const totalPurchases = purchases.reduce((sum, p) => sum + p.price * p.qty, 0);
-    const totalCollected = payments.filter(p => p.status === '완납').reduce((sum, p) => sum + p.amount, 0);
-    const totalUncollected = payments.filter(p => p.status !== '완납').reduce((sum, p) => sum + p.amount, 0);
-    const avgMarginRate = products.length
-      ? ((products.reduce((sum, p) => sum + (p.price - (p.cost || 0)), 0) /
-          products.reduce((sum, p) => sum + p.price, 0)) * 100).toFixed(1) + '%'
-      : '0%';
-
-    return {
-      months: allMonths,
-      salesData,
-      purchasesData,
-      customerLabels,
-      customerSales,
-      productLabels,
-      productSales,
-      kpi: {
-        totalSales,
-        totalPurchases,
-        totalCollected,
-        totalUncollected,
-        avgMarginRate
-      }
-    };
-  }, [sales, purchases, payments, products]);
+    // 제품별 매출
+    fetch('/api/margin_by_product')
+      .then(res => res.json())
+      .then(data => {
+        setProductLabels(data.labels);
+        setProductSales(data.sales);
+      });
+  }, []);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div className="bg-white p-4 rounded shadow h-[300px]">
+      <div className="bg-white p-4 rounded shadow h-[400px]">
         <h3 className="font-bold mb-4">월별 매출/매입 추이</h3>
         <SalesTrendChart labels={months} salesData={salesData} purchasesData={purchasesData} />
       </div>
 
-      <div className="bg-white p-4 rounded shadow h-[300px]">
+      <div className="bg-white p-4 rounded shadow h-[400px]">
         <h3 className="font-bold mb-4">고객사별 매출</h3>
         <CustomerSalesChart labels={customerLabels} dataValues={customerSales} />
       </div>
 
-      <div className="bg-white p-4 rounded shadow h-[300px]">
+      <div className="bg-white p-4 rounded shadow h-[400px]">
         <h3 className="font-bold mb-4">제품별 매출</h3>
         <ProductSalesChart labels={productLabels} dataValues={productSales} />
       </div>
 
-      <div className="bg-white p-4 rounded shadow">
+      <div className="bg-white p-4 rounded shadow h-[400px]">
         <h3 className="font-bold mb-4">핵심 성과 지표 (KPI)</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-blue-50 p-3 rounded">

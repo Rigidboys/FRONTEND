@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 const PaymentTable = ({ searchCustomer, searchDue, searchPaid, searchStatus }) => {
-  const payments = [
-  { id: 1, customer: '상현기업', amount: 5000000, due: '2025-05-20', paid: '2025-05-18', status: '완납' },
-  { id: 2, customer: '김일호', amount: 5000000, due: '2025-06-10', paid: '2025-06-05', status: '완납' },
-  { id: 3, customer: '한국일자리센터', amount: 5000000, due: '2025-06-30', paid: '', status: '미납' },
-  { id: 4, customer: '상현기업', amount: 4300000, due: '2025-06-25', paid: '', status: '미납' },
-  ];
+  const [payments, setPayments] = useState([]);
+
+  useEffect(() => {
+    fetch('/api/payments')
+      .then((res) => res.json())
+      .then(setPayments)
+      .catch((err) => console.error('수금 데이터 불러오기 실패', err));
+  }, []);
 
 const filteredPayments = payments.filter(p => {
   const matchCustomer = !searchCustomer || p.customer.includes(searchCustomer);

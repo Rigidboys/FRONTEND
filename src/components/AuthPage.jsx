@@ -9,7 +9,8 @@ export default function AuthPage() {
   const [loginPassword, setLoginPassword] = useState('');
 
   const [form, setForm] = useState({
-    id: '',
+    name: '',
+    userId: '',
     password: '',
     passwordConfirm: '',
     email: '',
@@ -19,28 +20,83 @@ export default function AuthPage() {
 
   const [error, setError] = useState('');
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (loginId === 'admin' && loginPassword === '1234') {
+    try {
+      const response = await fetch('https://localhost:7142/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId: loginId,
+          password: loginPassword,
+        }),
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.message || '로그인 실패');
+        return;
+      }
+
+      
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('userId', data.userId);
       localStorage.setItem('isLoggedIn', 'true');
       navigate('/?tab=customer');
-    } else {
-      alert('아이디나 비밀번호가 틀렸습니다.');
+    } catch (error) {
+      alert('서버 오류가 발생했습니다.');
+      console.error(error);
     }
   };
 
-  const handleSignup = (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
+
     if (form.password !== form.passwordConfirm) {
       setError('비밀번호가 일치하지 않습니다.');
       return;
     }
+
     if (!form.agree) {
       setError('개인정보 제공에 동의해주세요.');
       return;
     }
-    alert('회원가입 성공!');
-    navigate('/login');
+
+    try {
+  console.log("회원가입 데이터:", form);
+
+  const response = await fetch('https://localhost:7142/api/auth/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      userId: form.userId,
+      password: form.password,
+      email: form.email,
+      phone: form.phone,
+      name: form.name,
+    }),
+    credentials: 'include',
+  });
+
+  const data = await response.json();
+  console.log("응답 결과:", data);
+
+  if (!response.ok) {
+    alert(data.message || '회원가입 실패');
+    return;
+  }
+
+  alert('회원가입 성공!');
+  navigate('/login');
+} catch (error) {
+  console.error("fetch 오류 발생:", error);
+  alert('서버 오류가 발생했습니다.');
+}
+
   };
 
   const handleFormChange = (e) => {
@@ -54,23 +110,20 @@ export default function AuthPage() {
         <div className="flex justify-around border-b mb-4">
           <button
             onClick={() => setActiveTab('login')}
-            className={`py-2 px-4 font-semibold border-b-2 ${
-              activeTab === 'login' ? 'border-blue-600 text-blue-600' : ''
-            }`}
+            className={`py-2 px-4 font-semibold border-b-2 ${activeTab === 'login' ? 'border-blue-600 text-blue-600' : ''
+              }`}
           >
             로그인
           </button>
           <button
             onClick={() => setActiveTab('signup')}
-            className={`py-2 px-4 font-semibold border-b-2 ${
-              activeTab === 'signup' ? 'border-blue-600 text-blue-600' : ''
-            }`}
+            className={`py-2 px-4 font-semibold border-b-2 ${activeTab === 'signup' ? 'border-blue-600 text-blue-600' : ''
+              }`}
           >
             회원가입
           </button>
         </div>
 
-        {/* 로그인 폼 */}
         {activeTab === 'login' && (
           <form onSubmit={handleLogin} className="space-y-4">
             <input
@@ -95,10 +148,10 @@ export default function AuthPage() {
           </form>
         )}
 
-        {/* 회원가입 폼 */}
         {activeTab === 'signup' && (
           <form onSubmit={handleSignup} className="space-y-4">
-            <input name="id" type="text" placeholder="아이디" className="w-full border px-3 py-2 rounded" value={form.id} onChange={handleFormChange} required />
+            <input name="userId" type="text" placeholder="아이디" className="w-full border px-3 py-2 rounded" value={form.userId} onChange={handleFormChange} required />
+            <input name="name" type="text" placeholder="이름" className="w-full border px-3 py-2 rounded" value={form.name} onChange={handleFormChange}required/>
             <input name="password" type="password" placeholder="비밀번호" className="w-full border px-3 py-2 rounded" value={form.password} onChange={handleFormChange} required />
             <input name="passwordConfirm" type="password" placeholder="비밀번호 확인" className="w-full border px-3 py-2 rounded" value={form.passwordConfirm} onChange={handleFormChange} required />
             <input name="email" type="email" placeholder="이메일" className="w-full border px-3 py-2 rounded" value={form.email} onChange={handleFormChange} required />
