@@ -46,7 +46,7 @@ export default function AuthPage() {
       localStorage.setItem('token', data.token);
       localStorage.setItem('userId', data.userId);
       localStorage.setItem('isLoggedIn', 'true');
-      navigate('/?tab=customer');
+      navigate('/app');
     } catch (error) {
       alert('서버 오류가 발생했습니다.');
       console.error(error);
