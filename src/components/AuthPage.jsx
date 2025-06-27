@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+const BASE_URL =  process.env.REACT_APP_BASE_URL_BACKEND || 'http://localhost:5229/api';
+
 export default function AuthPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('login');
@@ -23,7 +25,7 @@ export default function AuthPage() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('https://localhost:7142/api/auth/login', {
+      const response = await fetch(`${BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -69,7 +71,7 @@ export default function AuthPage() {
     try {
   console.log("회원가입 데이터:", form);
 
-  const response = await fetch('https://localhost:7142/api/auth/register', {
+  const response = await fetch(`${BASE_URL}/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

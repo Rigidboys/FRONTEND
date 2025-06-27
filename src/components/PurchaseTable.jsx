@@ -1,18 +1,40 @@
 import React, { useEffect, useState } from 'react';
 
-const PurchaseTable = ({ searchCustomer, searchProduct }) => {
+const BASE_URL = process.env.REACT_APP_BASE_URL_BACKEND || 'http://localhost:5229/api';
+
+const PurchaseTable = ({ searchCustomer, searchProduct, token }) => {
   const [purchases, setPurchases] = useState([]);
 
   useEffect(() => {
-    fetch('/api/purchase')
-      .then(res => res.json())
-      .then(setPurchases)
+    console.log('[fetch 시작 - 매입] 토큰:', token);
+
+    fetch(`${BASE_URL}/purchases`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then(res => {
+        console.log('[응답 상태 - 매입]', res.status);
+        return res.json();
+      })
+      .then(data => {
+        console.log('[전체 응답 데이터 - 매입]', data);
+        const purchaseOnly = Array.isArray(data)
+          ? data.filter(p => (p.Purchase_or_Sale || '').trim() === '매입')
+          : [];
+        console.log('[매입 필터링 결과]', purchaseOnly);
+        setPurchases(purchaseOnly);
+      })
       .catch(err => console.error("매입 데이터 불러오기 실패", err));
-  }, []);
+  }, [token]);
 
   const filteredPurchases = purchases.filter(p => {
-    const matchCustomer = !searchCustomer || p.supplier.includes(searchCustomer);
-    const matchProduct = !searchProduct || p.product.includes(searchProduct);
+    const matchCustomer = !searchCustomer || (p.Seller_Name || '').includes(searchCustomer);
+    const matchProduct = !searchProduct || (p.Product_Name || '').includes(searchProduct);
+
+    console.log(`[필터조건] 고객사: ${searchCustomer}, 제품: ${searchProduct}`);
+    console.log(`[현재 행] 공급사: ${p.Seller_Name}, 제품명: ${p.Product_Name}, 조건일치:`, matchCustomer, matchProduct);
+
     return matchCustomer && matchProduct;
   });
 
@@ -32,15 +54,17 @@ const PurchaseTable = ({ searchCustomer, searchProduct }) => {
           </tr>
         </thead>
         <tbody>
-          {filteredPurchases.map(p => (
-            <tr key={p.id}>
-              <td className="px-4 py-2 w-[160px]">{p.supplier}</td>
-              <td className="px-4 py-2 text-center w-[120px]">{p.date}</td>
-              <td className="px-4 py-2 text-center w-[130px]">{p.product}</td>
-              <td className="px-4 py-2 text-center w-[130px]">{p.price.toLocaleString()}</td>
-              <td className="px-4 py-2 text-center w-[130px]">{p.qty}</td>
-              <td className="px-4 py-2 text-center w-[130px]">{(p.price * p.qty).toLocaleString()}</td>
-              <td className="px-4 py-2 text-center w-[100px]">{p.note}</td>
+          {filteredPurchases.map((p, i) => (
+            <tr key={i}>
+              <td className="px-4 py-2 w-[160px]">{p.Seller_Name}</td>
+              <td className="px-4 py-2 text-center w-[120px]">{p.Purchased_Date?.split('T')[0]}</td>
+              <td className="px-4 py-2 text-center w-[130px]">{p.Product_Name}</td>
+              <td className="px-4 py-2 text-center w-[130px]">{p.Purchase_Price?.toLocaleString()}</td>
+              <td className="px-4 py-2 text-center w-[130px]">{p.Purchase_Amount}</td>
+              <td className="px-4 py-2 text-center w-[130px]">
+                {(p.Purchase_Price * p.Purchase_Amount).toLocaleString()}
+              </td>
+              <td className="px-4 py-2 text-center w-[100px]">{p.Description}</td>
             </tr>
           ))}
           {filteredPurchases.length === 0 && (

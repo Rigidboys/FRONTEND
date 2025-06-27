@@ -1,22 +1,31 @@
 import React, { useEffect, useState } from 'react';
 
-const PaymentTable = ({ searchCustomer, searchDue, searchPaid, searchStatus }) => {
+const BASE_URL = process.env.REACT_APP_BASE_URL_BACKEND || 'http://localhost:5229/api';
+
+const PaymentTable = ({ searchCustomer, searchDue, searchPaid, searchStatus, token }) => {
   const [payments, setPayments] = useState([]);
 
   useEffect(() => {
-    fetch('/api/payments')
-      .then((res) => res.json())
-      .then(setPayments)
-      .catch((err) => console.error('수금 데이터 불러오기 실패', err));
-  }, []);
+    fetch(`${BASE_URL}/purchases`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+      .then(res => res.json())
+      .then(data => {
+        const unpaidOnly = data.filter(p => p.Purchase_or_Sale === '매출' && !p.Is_Payment);
+        setPayments(unpaidOnly);
+      })
+      .catch(err => console.error("수금 데이터 불러오기 실패", err));
+  }, [token]);
 
-const filteredPayments = payments.filter(p => {
-  const matchCustomer = !searchCustomer || p.customer.includes(searchCustomer);
-  const matchDue = !searchDue || p.due.startsWith(searchDue); // 날짜 비교 개선
-  const matchPaid = !searchPaid || (p.paid && p.paid.startsWith(searchPaid)); // 날짜 비교 개선
-  const matchStatus = !searchStatus || p.status === searchStatus;
-  return matchCustomer && matchDue && matchPaid && matchStatus;
-});
+  const filteredPayments = payments.filter(p => {
+    const matchCustomer = !searchCustomer || p.Customer_Name?.includes(searchCustomer);
+    const matchDue = !searchDue || (p.Payment_Period_Deadline && p.Payment_Period_Deadline.startsWith(searchDue));
+    const matchPaid = !searchPaid || (p.Paid_Payment !== null && p.Paid_Payment.toString().startsWith(searchPaid));
+    const matchStatus = !searchStatus || (p.Is_Payment ? '완납' : '미납') === searchStatus;
+    return matchCustomer && matchDue && matchPaid && matchStatus;
+  });
 
   return (
     <div className="overflow-x-auto mb-8">
@@ -33,17 +42,19 @@ const filteredPayments = payments.filter(p => {
           </tr>
         </thead>
         <tbody>
-          {filteredPayments.map(p => (
-            <tr key={p.id}>
-              <td className="px-4 py-2 w-[160px]">{p.customer}</td>
-              <td className="px-4 py-2 text-center w-[130px]">{p.due}</td>
-              <td className="px-4 py-2 text-center w-[130px]">{p.paid || '-'}</td>
-              <td className="px-4 py-2 text-center w-[120px]">{p.amount.toLocaleString()}</td>
+          {filteredPayments.map((p, i) => (
+            <tr key={i}>
+              <td className="px-4 py-2 w-[160px]">{p.Customer_Name}</td>
+              <td className="px-4 py-2 text-center w-[130px]">{p.Payment_Period_Deadline?.split('T')[0]}</td>
+              <td className="px-4 py-2 text-center w-[130px]">
+                {p.Is_Payment ? p.Payment_Period_End?.split('T')[0] : '-'}
+              </td>
+              <td className="px-4 py-2 text-center w-[120px]">{p.Paid_Payment?.toLocaleString()}</td>
               <td className="px-4 py-2 text-center text-red-500 w-[130px]">
-                {p.status !== '완납' ? p.amount.toLocaleString() : '-'}
+                {!p.Is_Payment ? ((p.Purchase_Price * p.Purchase_Amount - p.Paid_Payment) || 0).toLocaleString() : '-'}
               </td>
               <td className="px-4 py-2 text-center w-[100px]">
-                {p.status === '완납' ? (
+                {p.Is_Payment ? (
                   <span className="bg-green-100 text-green-800 px-2 py-1 rounded">완납</span>
                 ) : (
                   <span className="bg-red-100 text-red-800 px-2 py-1 rounded">미납</span>

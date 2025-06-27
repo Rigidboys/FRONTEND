@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import CustomerModal from './CustomerModal';
 
+const BASE_URL = process.env.REACT_APP_BASE_URL_BACKEND || 'http://localhost:5229/api';
+
 const CustomerTab = () => {
   const [searchParams] = useSearchParams();
   const tab = searchParams.get('tab');
@@ -13,7 +15,7 @@ const CustomerTab = () => {
   useEffect(() => {
     if (tab !== 'customer') return;
 
-    fetch("/api/customers", {
+    fetch(`${BASE_URL}/customers`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -39,7 +41,7 @@ const CustomerTab = () => {
   if (tab !== 'customer') return null;
 
   const openModal = (data = null) => {
-    if (data && !data.Id) {
+    if (data && !data.Office_Name) {
       console.warn("수정하려는 데이터에 ID가 없습니다!", data);
     }
     setEditData(data);
@@ -52,8 +54,8 @@ const CustomerTab = () => {
   };
 
   const handleSave = async (newData) => {
-    if (editData?.Id) {
-      const res = await fetch(`/api/customers/mutation/${editData.Id}`, {
+    if (editData?.Office_Name) {
+      const res = await fetch(`${BASE_URL}/customers/mutation/${editData.Office_Name}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -65,14 +67,14 @@ const CustomerTab = () => {
       if (res.ok) {
         const updated = await res.json();
         setCustomers(prev =>
-          prev.map(c => c.Id === updated.Id ? updated : c)
+          prev.map(c => c.Office_Name === updated.Office_Name ? updated : c)
         );
       } else {
         const err = await res.text();
         console.error("수정 실패:", res.status, err);
       }
     } else {
-      const res = await fetch("/api/customers", {
+      const res = await fetch(`${BASE_URL}/customers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -92,13 +94,14 @@ const CustomerTab = () => {
     closeModal();
   };
 
-  const handleDelete = async (Id) => {
-    if (!Id) {
+  const handleDelete = async (Office_Name) => {
+    if (!Office_Name) {
       console.error("삭제 요청 ID가 없습니다.");
       return;
     }
     if (window.confirm('정말 삭제하시겠습니까?')) {
-      const res = await fetch(`/api/customers/mutation/${Id}`, {
+      const encodedName = encodeURIComponent(Office_Name);
+      const res = await fetch(`${BASE_URL}/customers/mutation/${encodedName}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -106,7 +109,7 @@ const CustomerTab = () => {
         credentials: 'include'
       });
       if (res.ok) {
-        setCustomers(prev => prev.filter(c => c.Id !== Id));
+        setCustomers(prev => prev.filter(c => c.Office_Name !== Office_Name));
       } else {
         const err = await res.text();
         console.error("삭제 실패:", res.status, err);
@@ -140,7 +143,7 @@ const CustomerTab = () => {
           </thead>
           <tbody>
             {customers.map((c) => (
-              <tr key={c.Id}>
+              <tr key={c.Office_Name}>
                 <td className="px-4 py-2">{c.Office_Name}</td>
                 <td className="px-4 py-2 text-center">{c.Type}</td>
                 <td className="px-4 py-2 text-center">{c.Master_Name}</td>
@@ -154,7 +157,7 @@ const CustomerTab = () => {
                     <div className="flex space-x-1 items-center">
                       <button
                         onClick={() => {
-                          if (!c.Id) console.error("수정하려는 고객 ID가 없습니다:", c);
+                          if (!c.Office_Name) console.error("수정하려는 고객 ID가 없습니다:", c);
                           openModal(c);
                         }}
                         className="text-blue-500 hover:text-blue-700 mx-1"
@@ -163,8 +166,8 @@ const CustomerTab = () => {
                       </button>
                       <button
                         onClick={() => {
-                          if (!c.Id) console.error("삭제하려는 고객 ID가 없습니다:", c);
-                          handleDelete(c.Id);
+                          if (!c.Office_Name) console.error("삭제하려는 고객 ID가 없습니다:", c);
+                          handleDelete(c.Office_Name);
                         }}
                         className="text-red-500 hover:text-red-700 mx-1"
                       >

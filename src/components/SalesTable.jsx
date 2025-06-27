@@ -1,18 +1,44 @@
 import React, { useEffect, useState } from 'react';
 
-const SalesTable = ({ searchCustomer, searchProduct }) => {
+const BASE_URL = process.env.REACT_APP_BASE_URL_BACKEND || 'http://localhost:5229/api';
+
+const SalesTable = ({ searchCustomer, searchProduct, token, refreshKey }) => {
   const [sales, setSales] = useState([]);
 
   useEffect(() => {
-    fetch('/api/sales')
-      .then(res => res.json())
-      .then(setSales)
-      .catch(err => console.error("매출 데이터 불러오기 실패", err));
-  }, []);
+  if (!token) return;
+
+  console.log('[fetch 시작] 토큰:', token);
+  fetch(`${BASE_URL}/purchases`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  })
+    .then(res => {
+      console.log('[응답 상태]', res.status);
+      if (!res.ok) throw res;
+      return res.json();
+    })
+    .then(data => {
+      console.log('[전체 응답 데이터]', data);
+      const salesOnly = data.filter(p => p.Purchase_or_Sale === '매출');
+      console.log('[매출 데이터 필터링]', salesOnly);
+      setSales(salesOnly);
+    })
+    .catch(err => {
+      if (err.status === 401) {
+        console.warn('인증 실패 – 토큰이 유효하지 않습니다.');
+        return;
+      }
+      console.error('매출 데이터 불러오기 실패', err);
+    });
+}, [token, refreshKey]);
+
+  useEffect(() => {
+    console.log('[sales state 업데이트됨]', sales);
+  }, [sales]);
 
   const filteredSales = sales.filter(s => {
-    const matchCustomer = !searchCustomer || s.customer.includes(searchCustomer);
-    const matchProduct = !searchProduct || s.product.includes(searchProduct);
+    const matchCustomer = !searchCustomer || s.Customer_Name?.includes(searchCustomer);
+    const matchProduct = !searchProduct || s.Product_Name?.includes(searchProduct);
     return matchCustomer && matchProduct;
   });
 
@@ -32,15 +58,17 @@ const SalesTable = ({ searchCustomer, searchProduct }) => {
           </tr>
         </thead>
         <tbody>
-          {filteredSales.map(s => (
-            <tr key={s.id}>
-              <td className="px-4 py-2 w-[160px]">{s.customer}</td>
-              <td className="px-4 py-2 text-center w-[120px]">{s.date}</td>
-              <td className="px-4 py-2 text-center w-[130px]">{s.product}</td>
-              <td className="px-4 py-2 text-center w-[130px]">{s.price.toLocaleString()}</td>
-              <td className="px-4 py-2 text-center w-[130px]">{s.qty}</td>
-              <td className="px-4 py-2 text-center w-[130px]">{(s.price * s.qty).toLocaleString()}</td>
-              <td className="px-4 py-2 text-center w-[100px]">{s.note}</td>
+          {filteredSales.map((s, i) => (
+            <tr key={i}>
+              <td className="px-4 py-2 w-[160px]">{s.Customer_Name}</td>
+              <td className="px-4 py-2 text-center w-[120px]">{s.Purchased_Date?.split('T')[0]}</td>
+              <td className="px-4 py-2 text-center w-[130px]">{s.Product_Name}</td>
+              <td className="px-4 py-2 text-center w-[130px]">{s.Purchase_Price?.toLocaleString()}</td>
+              <td className="px-4 py-2 text-center w-[130px]">{s.Purchase_Amount}</td>
+              <td className="px-4 py-2 text-center w-[130px]">
+                {(s.Purchase_Price * s.Purchase_Amount).toLocaleString()}
+              </td>
+              <td className="px-4 py-2 text-center w-[100px]">{s.Description}</td>
             </tr>
           ))}
           {filteredSales.length === 0 && (

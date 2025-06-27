@@ -42,12 +42,18 @@ export function SalesTrendChart({ labels, salesData, purchasesData }) {
     plugins: {
       tooltip: {
         callbacks: {
-          label: (context) => `${context.dataset.label}: ${formatCurrency(context.raw)}`,
+          label: (context) =>
+            `${context.dataset.label}: ${formatCurrency(context.raw)}`,
         },
       },
     },
   };
-  return <Line data={data} options={options} className="w-full h-full" />;
+
+  return (
+    <div className="relative w-full h-full" style={{ height: '250px' }}>
+      <Line data={data} options={options} />
+    </div>
+  );
 }
 
 export function CustomerSalesChart({ labels, dataValues }) {
@@ -78,13 +84,18 @@ export function CustomerSalesChart({ labels, dataValues }) {
     plugins: {
       tooltip: {
         callbacks: {
-          label: (context) => `${context.dataset.label}: ${formatCurrency(context.raw)}`,
+          label: (context) =>
+            `${context.dataset.label}: ${formatCurrency(context.raw)}`,
         },
       },
     },
   };
 
-  return <Bar data={data} options={options} className="w-full h-full" />;
+  return (
+    <div className="relative w-full h-full" style={{ height: '250px' }}>
+      <Bar data={data} options={options} />
+    </div>
+  );
 }
 
 export function ProductSalesChart({ labels, dataValues }) {
@@ -130,5 +141,9 @@ export function ProductSalesChart({ labels, dataValues }) {
     },
   };
 
-  return <Doughnut data={data} options={options} className="w-full h-full" />;
+  return (
+    <div className="relative w-full h-full" style={{ height: '250px' }}>
+      <Doughnut data={data} options={options} />
+    </div>
+  );
 }

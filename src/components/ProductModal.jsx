@@ -1,99 +1,87 @@
-import React, { useState } from 'react';
-import ProductModal from './ProductModal';
+import React, { useState, useEffect } from 'react';
 
-const initialProducts = [
-  {id: 1, name: '시스템 계정관리', category: '솔루션', license: '연간', price: 5000000, cost: 3000000, description: '시스템 계정 통합 관리 솔루션'},
-  {id: 2, name: 'MobileOTP', category: '솔루션', license: '1회성', price: 2500000, cost: 1500000, description: '모바일 OTP 인증 솔루션'},
-  {id: 3, name: 'DB 접근 제어', category: '솔루션', license: '연간', price: 4300000, cost: 2800000, description: '데이터베이스 접근 제어 시스템'},
-  {id: 4, name: '보안 컨설팅', category: '서비스', license: '시간당', price: 500000, cost: 300000, description: '보안 전문가 컨설팅 서비스'},
-];
+const ProductModal = ({ visible, onClose, onSave, editData }) => {
+  const [form, setForm] = useState({
+    Product_Name: '',
+    Category: '솔루션',
+    License: '연간',
+    Product_price: '',
+    Production_price: '',
+    Description: ''
+  });
 
-function formatCurrency(number) {
-  return new Intl.NumberFormat('ko-KR').format(number) + '원';
-}
-
-const ProductTab = () => {
-  const [products, setProducts] = useState(initialProducts);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editId, setEditId] = useState(null);
-
-  const handleEdit = (id) => {
-    setEditId(id);
-    setModalOpen(true);
-  };
-
-  const handleDelete = (id) => {
-    if (window.confirm('정말 삭제하시겠습니까? 관련 매출/매입 데이터도 삭제됩니다.')) {
-      setProducts(products.filter(p => p.id !== id));
-    }
-  };
-
-  const handleSave = (product) => {
-    if (product.id) {
-      setProducts(products.map(p => (p.id === product.id ? product : p)));
+  useEffect(() => {
+    if (editData) {
+      setForm(editData);
     } else {
-      const nextId = Math.max(...products.map(p => p.id), 0) + 1;
-      setProducts([...products, { ...product, id: nextId }]);
+      setForm({
+        Product_Name: '',
+        Category: '솔루션',
+        License: '연간',
+        Product_price: '',
+        Production_price: '',
+        Description: ''
+      });
     }
-    setModalOpen(false);
-    setEditId(null);
+  }, [editData]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleAdd = () => {
-    setEditId(null);
-    setModalOpen(true);
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(form);
   };
+
+  if (!visible) return null;
 
   return (
-    <div>
-      <div className="flex justify-between mb-3">
-        <h2 className="text-lg font-bold">제품 목록</h2>
-        <button onClick={handleAdd} className="bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600 transition">
-          <i className="fas fa-plus"></i> 등록
-        </button>
+    <div className="modal-bg fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="modal-panel bg-white p-6 rounded shadow-lg w-full max-w-md">
+        <h3 className="font-bold text-lg mb-4">{editData ? '제품 정보 수정' : '신규 제품 등록'}</h3>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-3">
+            <label className="block mb-1">제품명</label>
+            <input required name="Product_Name" className="border w-full rounded p-2" value={form.Product_Name} onChange={handleChange} />
+          </div>
+          <div className="mb-3">
+            <label className="block mb-1">카테고리</label>
+            <select name="Category" className="border w-full rounded p-2" value={form.Category} onChange={handleChange}>
+              <option value="솔루션">솔루션</option>
+              <option value="하드웨어">하드웨어</option>
+              <option value="기타">기타</option>
+            </select>
+          </div>
+          <div className="mb-3">
+            <label className="block mb-1">라이센스</label>
+            <select name="License" className="border w-full rounded p-2" value={form.License} onChange={handleChange}>
+              <option value="연간">연간</option>
+              <option value="영구">영구</option>
+              <option value="기타">기타</option>
+            </select>
+          </div>
+          <div className="mb-3">
+            <label className="block mb-1">제품 가격</label>
+            <input type="number" name="Product_price" className="border w-full rounded p-2" value={form.Product_price} onChange={handleChange} />
+          </div>
+          <div className="mb-3">
+            <label className="block mb-1">실제 판매가</label>
+            <input type="number" name="Production_price" className="border w-full rounded p-2" value={form.Production_price} onChange={handleChange} />
+          </div>
+          <div className="mb-3">
+            <label className="block mb-1">비고</label>
+            <input name="Description" className="border w-full rounded p-2" value={form.Description} onChange={handleChange} />
+          </div>
+          <div className="flex gap-2 mt-4">
+            <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">저장</button>
+            <button type="button" onClick={onClose} className="bg-gray-200 px-4 py-2 rounded">취소</button>
+          </div>
+        </form>
       </div>
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-4 py-2 text-center">제품명</th>
-              <th className="px-4 py-2 text-center">카테고리</th>
-              <th className="px-4 py-2 text-center">라이센스</th>
-              <th className="px-4 py-2 text-center">가격</th>
-              <th className="px-4 py-2 text-center">설명</th>
-              <th className="px-4 py-2 text-center">작업</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map(p => (
-              <tr key={p.id}>
-                <td className="px-4 py-2 text-center">{p.name}</td>
-                <td className="px-4 py-2 text-center">{p.category}</td>
-                <td className="px-4 py-2 text-center">{p.license}</td>
-                <td className="px-4 py-2 text-center">{formatCurrency(p.price)}</td>
-                <td className="px-4 py-2 text-center">{p.description}</td>
-                <td className="px-4 py-2 text-center space-x-2">
-                  <button onClick={() => handleEdit(p.id)} className="text-blue-500 hover:text-blue-700">
-                    <i className="fas fa-edit"></i>
-                  </button>
-                  <button onClick={() => handleDelete(p.id)} className="text-red-500 hover:text-red-700">
-                    <i className="fas fa-trash"></i>
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {modalOpen && (
-        <ProductModal
-          product={editId ? products.find(p => p.id === editId) : null}
-          onSave={handleSave}
-          onCancel={() => setModalOpen(false)}
-        />
-      )}
     </div>
   );
 };
 
-export default ProductTab;
+export default ProductModal;

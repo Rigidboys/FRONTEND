@@ -12,8 +12,10 @@ const TransactionPage = () => {
   const [searchDue, setSearchDue] = useState('');
   const [searchPaid, setSearchPaid] = useState('');
   const [searchStatus, setSearchStatus] = useState('');
-
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const token = localStorage.getItem('token');
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
@@ -21,6 +23,8 @@ const TransactionPage = () => {
   const toggleFilter = (type) => {
     setFilter(prev => (prev === type ? null : type));
   };
+
+  const handleRefresh = () => setRefreshKey(prev => prev + 1);
 
   return (
     <div className="p-4">
@@ -75,12 +79,16 @@ const TransactionPage = () => {
           searchCustomer={searchCustomer}
           searchProduct={searchProduct}
           searchStatus={searchStatus}
+          token={token}
+          refreshKey={refreshKey}
         />
       )}
       {(filter === null || filter === '매입') && (
         <PurchaseTable
           searchCustomer={searchCustomer}
           searchProduct={searchProduct}
+          token={token}
+          refreshKey={refreshKey}
         />
       )}
       {(filter === null || filter === '수금') && (
@@ -89,11 +97,13 @@ const TransactionPage = () => {
           searchDue={searchDue}
           searchPaid={searchPaid}
           searchStatus={searchStatus}
+          token={token}
+          refreshKey={refreshKey}
         />
       )}
 
       {isModalOpen && (
-        <TransactionModal onClose={closeModal} />
+        <TransactionModal onClose={closeModal} onRefresh={handleRefresh} />
       )}
     </div>
   );
